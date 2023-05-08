@@ -1,4 +1,5 @@
 import TelemetryClient from './telemetry-client';
+import CONSTANTS from '../utils/index';
 
 export default class TelemetryDiagnosticControls {
   private diagnosticChannelConnectionString: string;
@@ -7,7 +8,8 @@ export default class TelemetryDiagnosticControls {
   private diagnosticInfo: string;
 
   constructor() {
-    this.diagnosticChannelConnectionString = '*111#';
+    this.diagnosticChannelConnectionString =
+      CONSTANTS.DIAGNISTIC_CHANNEL_CONNECTION_STRING;
     this.telemetryClient = new TelemetryClient();
     this.diagnosticInfo = '';
   }
@@ -20,11 +22,7 @@ export default class TelemetryDiagnosticControls {
     this.diagnosticInfo = newValue;
   }
 
-  public checkTransmission() {
-    this.diagnosticInfo = '';
-
-    this.telemetryClient.disconnect();
-
+  public attemptConnection() {
     let retryLeft = 3;
     while (this.telemetryClient.getOnlineStatus() === false && retryLeft > 0) {
       this.telemetryClient.connect(this.diagnosticChannelConnectionString);
@@ -34,6 +32,13 @@ export default class TelemetryDiagnosticControls {
     if (this.telemetryClient.getOnlineStatus() === false) {
       throw new Error('Unable to connect');
     }
+  }
+
+  public checkTransmission() {
+    this.diagnosticInfo = '';
+
+    this.telemetryClient.disconnect();
+    this.attemptConnection();
 
     this.telemetryClient.send(this.telemetryClient.diagnosticMessage());
     this.diagnosticInfo = this.telemetryClient.receive();
